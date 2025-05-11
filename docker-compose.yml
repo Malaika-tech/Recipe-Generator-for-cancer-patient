@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  recipe-service:
+    build: ./services/recipe-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/recipe_db
+    depends_on:
+      - db
+
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/user_db
+    depends_on:
+      - db
+
+  communication-service:
+    build: ./services/communication-service
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/communication_db
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_RECIPE_SERVICE_URL=http://localhost:8000
+      - VITE_USER_SERVICE_URL=http://localhost:3000
+      - VITE_COMMUNICATION_SERVICE_URL=http://localhost:8080
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_MULTIPLE_DATABASES=recipe_db,user_db,communication_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
+
+volumes:
+  postgres_data: 
